@@ -39,9 +39,12 @@ const useDarkModeInternal = (
 
   const [darkMode, setDarkMode] = useState(initialState)
 
-  useEffect(() => {
+  const triggerOnce = useRef(false)
+
+  const detector = () => {
+    const isClient = !isServerSide()
     const presentedDarkMode = storageKey
-      ? isServerSide()
+      ? isClient
         ? undefined
         : getStorage(storageKey)
       : undefined
@@ -52,10 +55,19 @@ const useDarkModeInternal = (
       } else if (presentedDarkMode === "false") {
         setDarkMode(false)
       }
-    } else if (typeof initialState === "undefined") {
+    } else if (typeof initialState === "undefined" && isClient) {
       setDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches)
     }
-  }, [storageKey])
+  }
+  if (!triggerOnce.current) {
+    detector()
+
+    triggerOnce.current = true
+  }
+
+  useEffect(() => {
+    detector()
+  }, [darkMode])
 
   useEffect(() => {
     const handler = (e: MediaQueryListEvent) => {
